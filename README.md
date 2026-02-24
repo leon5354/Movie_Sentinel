@@ -4,7 +4,7 @@ Movie review classification with automatic topic discovery.
 
 ## What It Does
 
-Classifies movie reviews into topics, but also watches for new patterns. When enough reviews mention something you didn't anticipate, it notices and adds that topic automatically.
+Classifies movie reviews into topics, but also watches for new patterns. When enough reviews share a theme you didn't anticipate, it notices and adds that topic automatically.
 
 ## How It Works
 
@@ -80,7 +80,7 @@ MIN_CONFIDENCE = 0.7           # Minimum confidence to accept label
 # ============================================
 # DATA SETTINGS
 # ============================================
-INPUT_FILE_PATH = "data/movie_reviews.csv"       # Where to read
+INPUT_FILE_PATH = "data/movie_reviews.csv"    # Where to read
 OUTPUT_FILE_PATH = "output/processed_reviews.csv" # Where to save
 
 # Column names in your CSV (change these!)
@@ -109,22 +109,35 @@ MASTER_TOPICS = [
 In `config.py`, find the `MASTER_TOPICS` list and edit it:
 
 ```python
-# Example: Film festival reviews
+# Example: Movie reviews (default)
 MASTER_TOPICS = [
-    "Acting",
-    "Story",
+    "Acting Performance",
+    "Plot & Story",
+    "Visual Effects",
     "Cinematography",
-    "Sound",
-    "Editing",
+    "Soundtrack & Score",
+    "Direction",
+    "Dialogue",
 ]
 
-# Example: Streaming platform reviews
+# Example: Restaurant reviews
 MASTER_TOPICS = [
-    "Content Quality",
-    "User Interface",
-    "Streaming Quality",
-    "Subtitle/CC",
-    "Recommendation Algorithm",
+    "Food Quality",
+    "Service",
+    "Ambiance",
+    "Price",
+    "Cleanliness",
+    "Wait Time",
+]
+
+# Example: Book reviews
+MASTER_TOPICS = [
+    "Writing Style",
+    "Character Development",
+    "Plot",
+    "Pacing",
+    "World Building",
+    "Ending",
 ]
 ```
 
@@ -145,12 +158,48 @@ Your CSV might have different column names. Change these in `config.py`:
 COMMENT_COL_NAME = "review_text"
 DATE_COL_NAME = "created_at"
 ID_COL_NAME = "review_id"
+
+# Or if it looks like:
+# id, comment, source
+COMMENT_COL_NAME = "comment"
+DATE_COL_NAME = None  # optional
+ID_COL_NAME = "id"
 ```
 
 Or override via command line:
 
 ```bash
-python3 scripts/run.py --input mydata.csv --comment-col "review_text"
+python3 scripts/run.py --input mydata.csv --review-col "review_text"
+```
+
+---
+
+### Tuning Discovery Sensitivity
+
+```python
+# Conservative (only add topics that are clearly trending)
+DISCOVERY_THRESHOLD = 10
+
+# Aggressive (catch emerging issues fast)
+DISCOVERY_THRESHOLD = 3
+
+# Default (balanced)
+DISCOVERY_THRESHOLD = 5
+```
+
+---
+
+### Model Behavior Tuning
+
+```python
+# Most consistent (recommended for classification)
+TEMPERATURE = 0.1
+
+# More creative (might vary labels)
+TEMPERATURE = 0.5
+
+# Maximum consistency
+TEMPERATURE = 0.0
 ```
 
 ---
@@ -171,14 +220,18 @@ cp .env.example .env
 # Edit .env with your provider and API key
 ```
 
-### 3. Run
+### 3. Edit Topics (Important!)
+
+Open `config.py` and set `MASTER_TOPICS` to match your domain.
+
+### 4. Run
 
 ```bash
 # Test with synthetic data
 python3 scripts/run.py --generate --limit 20
 
 # Your own data
-python3 scripts/run.py --input your_data.csv --comment-col "your_column"
+python3 scripts/run.py --input your_data.csv --review-col "your_column"
 ```
 
 ---
@@ -190,9 +243,22 @@ python3 scripts/run.py [options]
 
 Options:
   --input, -i FILE       Input CSV file (default: data/movie_reviews.csv)
-  --comment-col, -c COL  Column name for review text (default: review_text)
+  --review-col, -c COL   Column name for review text (default: review_text)
   --generate, -g         Generate test data before running
   --limit, -l N          Only process N rows (for testing)
+```
+
+Examples:
+
+```bash
+# Quick test
+python3 scripts/run.py --generate --limit 10
+
+# Full run with custom file
+python3 scripts/run.py --input reviews.csv --review-col "review_body"
+
+# Process everything
+python3 scripts/run.py --input big_dataset.csv
 ```
 
 ---
@@ -300,6 +366,74 @@ Movie_Sentinel/
 ├── data/                  # Put your CSVs here
 └── output/                # Results saved here
 ```
+
+---
+
+## Common Customizations
+
+### I want different topics
+
+Edit `config.py`:
+
+```python
+MASTER_TOPICS = ["Your", "Custom", "Topics", "Here"]
+```
+
+### My CSV has different column names
+
+Edit `config.py`:
+
+```python
+COMMENT_COL_NAME = "your_review_column"
+ID_COL_NAME = "your_id_column"
+DATE_COL_NAME = "your_date_column"
+```
+
+Or use CLI:
+
+```bash
+python3 scripts/run.py --review-col "your_column"
+```
+
+### I want topics to be discovered faster
+
+Edit `config.py`:
+
+```python
+DISCOVERY_THRESHOLD = 3  # Lower = faster discovery
+```
+
+### I want more consistent labeling
+
+Edit `config.py`:
+
+```python
+TEMPERATURE = 0.0  # Lowest = most deterministic
+```
+
+### I want to use a different LLM
+
+Edit `.env`:
+
+```env
+LLM_PROVIDER=openai  # or anthropic, google, ollama
+OPENAI_API_KEY=sk-...
+```
+
+---
+
+## Sentinel Alert
+
+When a new topic hits threshold:
+
+```
+==================================================
+🚨 Sentinel Alert: New category 'Pacing Issues' detected and added to taxonomy.
+   Hits: 5
+==================================================
+```
+
+Previous UNCATEGORIZED rows are automatically re-tagged.
 
 ---
 

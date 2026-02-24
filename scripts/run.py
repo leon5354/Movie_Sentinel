@@ -25,9 +25,9 @@ from src.llm_wrapper import provider_info
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Movie_Sentinel - Movie Review Topic Classification")
+    parser = argparse.ArgumentParser(description="Movie_Sentinel - Movie Review Topic Segmentation")
     parser.add_argument("--input", "-i", default=INPUT_FILE_PATH, help="Input CSV file")
-    parser.add_argument("--comment-col", "-c", default=COMMENT_COL_NAME, help="Review column name")
+    parser.add_argument("--review-col", "-c", default=COMMENT_COL_NAME, help="Review column name")
     parser.add_argument("--generate", "-g", action="store_true", help="Generate test data first")
     parser.add_argument("--limit", "-l", type=int, default=None, help="Max rows to process")
 
@@ -65,8 +65,8 @@ def main():
     df = pd.read_csv(input_path)
     print(f"Rows: {len(df)}")
 
-    if args.comment_col not in df.columns:
-        print(f"Column '{args.comment_col}' not found")
+    if args.review_col not in df.columns:
+        print(f"Column '{args.review_col}' not found")
         print(f"Available: {list(df.columns)}")
         sys.exit(1)
 
@@ -86,7 +86,7 @@ def main():
     print(f"\nProcessing {len(df)} reviews...")
 
     for idx, row in tqdm(df.iterrows(), total=len(df), desc="Classifying"):
-        review = str(row[args.comment_col])
+        review = str(row[args.review_col])
 
         result = classifier.classify(review, idx=idx)
 
